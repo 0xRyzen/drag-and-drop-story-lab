@@ -1,0 +1,67 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "evidence_complete": {
+      "type": "boolean"
+    },
+    "hard_failures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "identity",
+              "cast",
+              "style",
+              "anatomy",
+              "solid_intersection",
+              "teleport",
+              "story"
+            ]
+          },
+          "start": {
+            "type": "number"
+          },
+          "end": {
+            "type": "number"
+          },
+          "evidence": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "start",
+          "end",
+          "evidence"
+        ]
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "observed_end_state": {
+      "type": "string"
+    },
+    "audio_fidelity": {
+      "type": "string",
+      "enum": [
+        "UNVERIFIED"
+      ]
+    }
+  },
+  "required": [
+    "evidence_complete",
+    "hard_failures",
+    "warnings",
+    "observed_end_state",
+    "audio_fidelity"
+  ]
+}

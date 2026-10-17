@@ -1,0 +1,9 @@
+{
+  "source_attachment": "cartoon-scene-builder(5).skill",
+  "archive_sha256": "fb4822ffc9c2ab3aaa0f7a13fa9ddc0575e708298181d7cf61904e4b6da306ea",
+  "original_entry": "cartoon-scene-builder/SKILL.md",
+  "original_skill_sha256": "987c9c98f91200ce22b47ac557d65391d4cce01787344598893af88faede270b",
+  "original_bytes": 14607,
+  "changes": "New derivative for simple episode descriptions, dialogue/audio direction, and structured autonomous production. Original preserved verbatim; not an exact replacement claim.",
+  "enhanced_skill_sha256": "8fe6ca98dc2f5f61af7bb5f4baba5415369a9d2481ec3e95eee1177e4c170bcb"
+}

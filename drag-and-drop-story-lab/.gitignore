@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.*
+!.env.example
+operator.json
+*.local.json
+runs/
+outputs/
+*.mp4
+*.wav
+*.log
+*.tmp
+.DS_Store
+__pycache__/

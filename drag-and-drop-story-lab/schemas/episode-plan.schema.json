@@ -1,0 +1,237 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "season": {
+      "type": "integer"
+    },
+    "episode": {
+      "type": "integer"
+    },
+    "title": {
+      "type": "string"
+    },
+    "duration_seconds": {
+      "type": "integer",
+      "enum": [
+        60,
+        75,
+        90,
+        105,
+        120
+      ]
+    },
+    "duration_reason": {
+      "type": "string"
+    },
+    "skill_sha256": {
+      "type": "string"
+    },
+    "story_sha256": {
+      "type": "string"
+    },
+    "beats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "description"
+        ]
+      },
+      "minItems": 4
+    },
+    "clips": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "clip_index": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "beat_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "cast_tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "location_tag": {
+            "type": "string"
+          },
+          "prop_tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1
+          },
+          "start_state": {
+            "type": "string"
+          },
+          "end_state": {
+            "type": "string"
+          },
+          "shots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "start": {
+                  "type": "number"
+                },
+                "end": {
+                  "type": "number"
+                },
+                "camera": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                },
+                "dialogue": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "speaker": {
+                        "type": "string",
+                        "enum": [
+                          "Jack",
+                          "Karega"
+                        ]
+                      },
+                      "voice_tag": {
+                        "type": "string",
+                        "enum": [
+                          "Grady",
+                          "Arthur"
+                        ]
+                      },
+                      "start": {
+                        "type": "number"
+                      },
+                      "end": {
+                        "type": "number"
+                      },
+                      "text": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "speaker",
+                      "voice_tag",
+                      "start",
+                      "end",
+                      "text"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "start",
+                "end",
+                "camera",
+                "action",
+                "dialogue"
+              ]
+            },
+            "minItems": 3,
+            "maxItems": 5
+          },
+          "audio": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "ambience": {
+                "type": "string"
+              },
+              "music": {
+                "type": "string"
+              },
+              "sfx": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "time": {
+                      "type": "number"
+                    },
+                    "cue": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "time",
+                    "cue"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "ambience",
+              "music",
+              "sfx"
+            ]
+          }
+        },
+        "required": [
+          "clip_index",
+          "title",
+          "beat_ids",
+          "cast_tags",
+          "location_tag",
+          "prop_tags",
+          "start_state",
+          "end_state",
+          "shots",
+          "audio"
+        ]
+      },
+      "minItems": 4,
+      "maxItems": 8
+    }
+  },
+  "required": [
+    "schema_version",
+    "season",
+    "episode",
+    "title",
+    "duration_seconds",
+    "duration_reason",
+    "skill_sha256",
+    "story_sha256",
+    "beats",
+    "clips"
+  ]
+}

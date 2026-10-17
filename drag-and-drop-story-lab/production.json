@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "model": "minimax_h3",
+  "resolution": "2K",
+  "width": 1440,
+  "height": 2560,
+  "aspect_ratio": "9:16",
+  "clip_seconds": 15,
+  "batch_size": 1,
+  "episode_seconds": [60, 75, 90, 105, 120],
+  "duration_policy": "story_fit_persisted_once",
+  "allowed_characters": ["jack-sheet", "karega-sheet"],
+  "allowed_locations": ["ruined-server-room"],
+  "allowed_props": ["black-data-drive"],
+  "voices": {"Jack": "Grady", "Karega": "Arthur"},
+  "max_retries_per_clip": 1,
+  "max_repair_jobs_per_episode": 2,
+  "dialogue_target_words_per_clip": [16, 24],
+  "music": "native original instrumental underscore; quieter than speech",
+  "audio_qa": "stream_and_level_checks_only; voice/dialogue/music fidelity remains unverified"
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Cartoon Scene Builder - Story Lab"
+  short_description: "Simple episode ideas into timed cartoon production plans."
+  default_prompt: "Use $cartoon-scene-builder to expand this episode description using the supplied Project Bible and automation schema."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,60 @@
+name: Story Lab episode production
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'episodes/season-*/episode-*.md'
+  workflow_dispatch:
+    inputs:
+      episode_path:
+        description: Simple episode description to process
+        required: true
+        default: episodes/season-01/episode-01.md
+        type: string
+      mode:
+        description: Plan is free of Higgsfield generation; render needs the server credit authorization
+        required: true
+        default: plan
+        type: choice
+        options: [plan, render]
+      resume:
+        description: Resume the same saved run, never blindly resubmit an unknown paid job
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: story-lab-intake-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  request-episode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run offline guard tests
+        run: npm test
+      - name: Dispatch ready episode descriptions to n8n
+        env:
+          DND_N8N_URL: ${{ secrets.DND_N8N_URL }}
+          DND_WEBHOOK_TOKEN: ${{ secrets.DND_WEBHOOK_TOKEN }}
+          DND_MODE: ${{ vars.DND_MODE || 'plan' }}
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          COMMIT_SHA: ${{ github.sha }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+          EPISODE_PATH: ${{ inputs.episode_path }}
+          REQUESTED_MODE: ${{ inputs.mode }}
+          RESUME: ${{ inputs.resume }}
+        run: python3 .github/dispatch_episode.py

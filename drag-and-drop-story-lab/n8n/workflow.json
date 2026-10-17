@@ -1,0 +1,395 @@
+{
+  "name": "DRAG & DROP - Simple Story Lab (TEST)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "incoming",
+      "name": "GitHub Episode Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dnd-story-lab-episode",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "id": "manual",
+      "name": "Manual Health Check",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "health",
+      "name": "Server Health - No Credits",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "command": "node -e 'const fs=require(\"node:fs\"),cp=require(\"node:child_process\"); const env={...process.env};delete env.OPENAI_API_KEY;delete env.CODEX_API_KEY; const a=cp.spawnSync(\"codex\",[\"login\",\"status\"],{encoding:\"utf8\",timeout:20000,env}); const v=cp.spawnSync(\"codex\",[\"--version\"],{encoding:\"utf8\",timeout:20000,env}); console.log(JSON.stringify({stage:\"DONE\",status:\"HEALTH_ONLY\",node:process.version,codex_version:(v.stdout||\"\").trim(),codex_chatgpt_authenticated:a.status===0&&/chatgpt/i.test((a.stdout||\"\")+(a.stderr||\"\")),runtime_installed:fs.existsSync(\"/files/dnd-story-lab/app/runtime/runner.mjs\"),operator_config_present:fs.existsSync(\"/files/dnd-story-lab/operator.json\"),ffmpeg_present:fs.existsSync(\"/tmp/drag-drop-tools/ffmpeg\"),ffprobe_present:fs.existsSync(\"/tmp/drag-drop-tools/ffprobe\"),paid_jobs_submitted:0}));'"
+      }
+    },
+    {
+      "id": "normalize",
+      "name": "Validate GitHub Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        250,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const b=$json.body||$json; if(!b.repository||!b.commit||!b.path)throw Error('Expected GitHub repository, immutable commit and episode path'); const r={repository:String(b.repository),branch:String(b.branch||'main'),commit:String(b.commit),path:String(b.path),mode:String(b.mode||'plan'),resume:b.resume===true,execution_id:String($execution.id)}; if(!/^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$/.test(r.repository)||!/^[a-f0-9]{40}$/.test(r.commit)||!/^episodes\\/season-\\d{2}\\/episode-\\d{2}\\.md$/.test(r.path)||!['plan','render'].includes(r.mode))throw Error('Invalid production request'); return [{json:{request_b64:Buffer.from(JSON.stringify(r)).toString('base64')}}];"
+      }
+    },
+    {
+      "id": "director",
+      "name": "Codex CLI - Scene Builder Skill",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        500,
+        0
+      ],
+      "parameters": {
+        "command": "=node /files/dnd-story-lab/app/runtime/runner.mjs init {{ $json.request_b64 }}"
+      }
+    },
+    {
+      "id": "unpack",
+      "name": "Read Saved Production Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        770,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const x=$input.first().json; if(Number(x.exitCode||0)!==0)throw Error('Runner failed; preserve saved state and never resubmit a paid job blindly'); const r=JSON.parse(x.stdout||'{}'); if(!['HIGGSFIELD','WAIT','QA','ASSEMBLE','DONE'].includes(r.stage))throw Error('Invalid runner stage'); if(r.stage==='HIGGSFIELD'&&!['show_reference_elements','estimate_video_cost','generate_video','jobs_wait','media_upload','media_confirm'].includes(r.tool))throw Error('Tool outside production allowlist'); return [{json:r}];"
+      }
+    },
+    {
+      "id": "route",
+      "name": "Route Production Stage",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        0
+      ],
+      "parameters": {
+        "mode": "expression",
+        "numberOutputs": 5,
+        "output": "={{ ['HIGGSFIELD','WAIT','QA','ASSEMBLE','DONE'].indexOf($json.stage) }}"
+      }
+    },
+    {
+      "id": "higgs",
+      "name": "Higgsfield - Authorized Action",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        1330,
+        -240
+      ],
+      "parameters": {
+        "endpointUrl": "https://mcp.higgsfield.ai/mcp",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.tool }}"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ $json.params }}",
+        "options": {
+          "timeout": 180000,
+          "convertToBinary": false
+        }
+      },
+      "credentials": {
+        "mcpOAuth2Api": {
+          "name": "MCP account"
+        }
+      }
+    },
+    {
+      "id": "checkpoint",
+      "name": "Checkpoint Job and Media Result",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        -240
+      ],
+      "parameters": {
+        "command": "=node /files/dnd-story-lab/app/runtime/runner.mjs absorb {{ Buffer.from(JSON.stringify({run_id:$('Route Production Stage').last().json.run_id,action_id:$('Route Production Stage').last().json.action_id,response:$json})).toString('base64') }}"
+      }
+    },
+    {
+      "id": "wait",
+      "name": "Wait for Same Saved Job",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1330,
+        -30
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 20,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "resume",
+      "name": "Resume Next Safe Step",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        -30
+      ],
+      "parameters": {
+        "command": "=node /files/dnd-story-lab/app/runtime/runner.mjs next {{ Buffer.from(JSON.stringify({run_id:$json.run_id})).toString('base64') }}"
+      }
+    },
+    {
+      "id": "qa",
+      "name": "Codex QA - Anatomy Action and Continuity",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1330,
+        200
+      ],
+      "parameters": {
+        "command": "=node /files/dnd-story-lab/app/runtime/runner.mjs qa {{ Buffer.from(JSON.stringify({run_id:$json.run_id})).toString('base64') }}"
+      }
+    },
+    {
+      "id": "assembly",
+      "name": "Assemble Accepted Episode 60-120s",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1330,
+        420
+      ],
+      "parameters": {
+        "command": "=node /files/dnd-story-lab/app/runtime/runner.mjs assemble {{ Buffer.from(JSON.stringify({run_id:$json.run_id})).toString('base64') }}"
+      }
+    },
+    {
+      "id": "report",
+      "name": "Episode Result and Honest QA Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        650
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().map(x=>({json:{...x.json,qa_note:'Visual QA is sampled. An audio stream does not verify dialogue, voice identity, score or lip sync.'}}));"
+      }
+    }
+  ],
+  "connections": {
+    "GitHub Episode Request": {
+      "main": [
+        [
+          {
+            "node": "Validate GitHub Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate GitHub Request": {
+      "main": [
+        [
+          {
+            "node": "Codex CLI - Scene Builder Skill",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Codex CLI - Scene Builder Skill": {
+      "main": [
+        [
+          {
+            "node": "Read Saved Production Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Saved Production Decision": {
+      "main": [
+        [
+          {
+            "node": "Route Production Stage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Health Check": {
+      "main": [
+        [
+          {
+            "node": "Server Health - No Credits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Server Health - No Credits": {
+      "main": [
+        [
+          {
+            "node": "Read Saved Production Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Higgsfield - Authorized Action": {
+      "main": [
+        [
+          {
+            "node": "Checkpoint Job and Media Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checkpoint Job and Media Result": {
+      "main": [
+        [
+          {
+            "node": "Read Saved Production Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Same Saved Job": {
+      "main": [
+        [
+          {
+            "node": "Resume Next Safe Step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Next Safe Step": {
+      "main": [
+        [
+          {
+            "node": "Read Saved Production Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Codex QA - Anatomy Action and Continuity": {
+      "main": [
+        [
+          {
+            "node": "Read Saved Production Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assemble Accepted Episode 60-120s": {
+      "main": [
+        [
+          {
+            "node": "Read Saved Production Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Production Stage": {
+      "main": [
+        [
+          {
+            "node": "Higgsfield - Authorized Action",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait for Same Saved Job",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Codex QA - Anatomy Action and Continuity",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Assemble Accepted Episode 60-120s",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Episode Result and Honest QA Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

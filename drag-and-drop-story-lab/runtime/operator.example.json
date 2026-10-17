@@ -1,0 +1,15 @@
+{
+  "allowed_repository": "",
+  "allowed_branch": "main",
+  "allowed_episode_paths": ["episodes/season-01/episode-01.md"],
+  "render_enabled": false,
+  "max_credits_per_episode": 0,
+  "max_credits_per_clip": 30,
+  "codex_model": "",
+  "codex_reasoning": "medium",
+  "ffmpeg": "/tmp/drag-drop-tools/ffmpeg",
+  "ffprobe": "/tmp/drag-drop-tools/ffprobe",
+  "state_root": "/files/dnd-story-lab/runs",
+  "approved_elements": {},
+  "note": "Private server config. Set repo, verify existing asset bindings, and explicitly authorize a budget before enabling render. Never commit the filled copy."
+}
